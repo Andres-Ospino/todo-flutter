@@ -15,6 +15,7 @@ Flutter frontend for the To-Do application with clean architecture and Riverpod 
 
 - ✅ Clean Architecture (Domain/Data/Presentation layers)
 - ✅ Riverpod state management with optimistic updates
+- ✅ Infinite Scroll Pagination
 - ✅ Pull-to-refresh functionality
 - ✅ Task filtering (All/Pending/Completed)
 - ✅ Create tasks with validation
@@ -63,7 +64,7 @@ lib/
 │   └── widgets/
 │       ├── loading_indicator.dart
 │       ├── error_display.dart
-│       └── empty_state.dart
+│       ├── empty_state.dart
 └── main.dart                         # App entry point
 ```
 
