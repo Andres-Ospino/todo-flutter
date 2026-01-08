@@ -16,9 +16,9 @@ class TaskModel with _$TaskModel {
 
   const factory TaskModel({
     @JsonKey(readValue: _readId) required String id,
-    required String title,
+    @Default('') String title, // Default to empty string if null
     String? description,
-    required bool completed,
+    @Default(false) bool completed, // Default to false if null
     required DateTime createdAt,
     DateTime? updatedAt,
   }) = _TaskModel;

@@ -23,9 +23,11 @@ TaskModel _$TaskModelFromJson(Map<String, dynamic> json) {
 mixin _$TaskModel {
   @JsonKey(readValue: _readId)
   String get id => throw _privateConstructorUsedError;
-  String get title => throw _privateConstructorUsedError;
+  String get title =>
+      throw _privateConstructorUsedError; // Default to empty string if null
   String? get description => throw _privateConstructorUsedError;
-  bool get completed => throw _privateConstructorUsedError;
+  bool get completed =>
+      throw _privateConstructorUsedError; // Default to false if null
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
 
@@ -184,9 +186,9 @@ class __$$TaskModelImplCopyWithImpl<$Res>
 class _$TaskModelImpl extends _TaskModel {
   const _$TaskModelImpl({
     @JsonKey(readValue: _readId) required this.id,
-    required this.title,
+    this.title = '',
     this.description,
-    required this.completed,
+    this.completed = false,
     required this.createdAt,
     this.updatedAt,
   }) : super._();
@@ -198,11 +200,15 @@ class _$TaskModelImpl extends _TaskModel {
   @JsonKey(readValue: _readId)
   final String id;
   @override
+  @JsonKey()
   final String title;
+  // Default to empty string if null
   @override
   final String? description;
   @override
+  @JsonKey()
   final bool completed;
+  // Default to false if null
   @override
   final DateTime createdAt;
   @override
@@ -259,9 +265,9 @@ class _$TaskModelImpl extends _TaskModel {
 abstract class _TaskModel extends TaskModel {
   const factory _TaskModel({
     @JsonKey(readValue: _readId) required final String id,
-    required final String title,
+    final String title,
     final String? description,
-    required final bool completed,
+    final bool completed,
     required final DateTime createdAt,
     final DateTime? updatedAt,
   }) = _$TaskModelImpl;
@@ -274,11 +280,11 @@ abstract class _TaskModel extends TaskModel {
   @JsonKey(readValue: _readId)
   String get id;
   @override
-  String get title;
+  String get title; // Default to empty string if null
   @override
   String? get description;
   @override
-  bool get completed;
+  bool get completed; // Default to false if null
   @override
   DateTime get createdAt;
   @override

@@ -64,7 +64,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
-      builder: (context) => const SettingsSheet(), // Extracted widget
+      isScrollControlled: true, // Allow true scrolling behavior
+      builder: (context) => const SettingsSheet(),
     );
   }
 
@@ -276,60 +277,66 @@ class SettingsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-      width: double.infinity,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Configuración', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 24),
-          
-          const Text('Tema', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          SegmentedButton<ThemeMode>(
-            segments: const [
-              ButtonSegment(
-                value: ThemeMode.system, 
-                label: Text('Sistema'), 
-                icon: Icon(Icons.brightness_auto)
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24), // Reduced bottom padding slightly in favor of SafeArea
+        width: double.infinity,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // No drag handle here as it is provided by showModalBottomSheet(showDragHandle: true)
+              
+              Text('Configuración', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 24),
+              
+              const Text('Tema', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.system, 
+                    label: Text('Sistema'), 
+                    icon: Icon(Icons.brightness_auto)
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light, 
+                    label: Text('Claro'), 
+                    icon: Icon(Icons.light_mode)
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark, 
+                    label: Text('Oscuro'), 
+                    icon: Icon(Icons.dark_mode)
+                  ),
+                ],
+                selected: {themeMode},
+                onSelectionChanged: (Set<ThemeMode> newSelection) {
+                  ref.read(themeProvider.notifier).setTheme(newSelection.first);
+                },
               ),
-              ButtonSegment(
-                value: ThemeMode.light, 
-                label: Text('Claro'), 
-                icon: Icon(Icons.light_mode)
+              
+              const SizedBox(height: 24),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('Acerca de'),
+                subtitle: const Text('To-Do App v1.0.0'),
+                contentPadding: EdgeInsets.zero,
+                onTap: () {},
               ),
-              ButtonSegment(
-                value: ThemeMode.dark, 
-                label: Text('Oscuro'), 
-                icon: Icon(Icons.dark_mode)
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonal(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cerrar'),
+                ),
               ),
             ],
-            selected: {themeMode},
-            onSelectionChanged: (Set<ThemeMode> newSelection) {
-              ref.read(themeProvider.notifier).setTheme(newSelection.first);
-            },
           ),
-          
-          const SizedBox(height: 24),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Acerca de'),
-            subtitle: const Text('To-Do App v1.0.0'),
-            contentPadding: EdgeInsets.zero,
-            onTap: () {},
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cerrar'),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

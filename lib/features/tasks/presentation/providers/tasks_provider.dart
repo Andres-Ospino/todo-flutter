@@ -126,17 +126,28 @@ class TasksNotifier extends StateNotifier<TasksState> {
   }
 
   Future<void> deleteTask(String id) async {
+    print('🗑️ [Notifier] Attempting to delete task: "$id"');
     final currentState = state.mapOrNull(loaded: (s) => s);
-    if (currentState == null) return;
+    if (currentState == null) {
+      print('⚠️ [Notifier] Cannot delete: State is not loaded');
+      return;
+    }
 
     final previousTasks = currentState.tasks;
-    final updatedTasks = previousTasks.where((task) => task.id != id).toList();
+    print('📊 [Notifier] Previous tasks count: ${previousTasks.length}');
+    
+    // Debug IDs
+    // previousTasks.forEach((t) => print(' - Task: ${t.title} (${t.id})'));
+
+    final updatedTasks = previousTasks.where((task) => task.id.toString() != id.toString()).toList();
+    print('📉 [Notifier] Updated tasks count: ${updatedTasks.length}');
     
     state = currentState.copyWith(tasks: updatedTasks);
 
     try {
       await _repository.deleteTask(id);
     } catch (e) {
+       print('❌ [Notifier] Delete failed, reverting. Error: $e');
        state = currentState.copyWith(tasks: previousTasks); // Revert
        state = TasksState.error(e.toString());
     }
