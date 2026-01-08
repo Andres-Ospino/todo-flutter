@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'features/tasks/presentation/screens/tasks_screen.dart';
 
-void main() {
+Future<void> main() async {
+  // Aseguramos que los bindings estén inicializados antes de cargar .env
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Cargamos el archivo .env si existe
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    // Si no existe, no pasa nada, usaremos los defaults o dart-define
+    print("No .env file found, using defaults.");
+  }
+
   runApp(
     const ProviderScope(
       child: MyApp(),
