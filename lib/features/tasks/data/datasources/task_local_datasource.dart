@@ -1,8 +1,5 @@
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../domain/entities/task.dart';
-
-// Removed part directive as we are not using codegen yet
-// part 'task_local_datasource.g.dart';
 
 /// Local Datasource using Hive
 class TaskLocalDataSource {
@@ -10,13 +7,22 @@ class TaskLocalDataSource {
   static const String pendingBoxName = 'pending_actions';
 
   Future<void> init() async {
+    // We attempt to open boxes here, but we also check in _getBox
     if (!Hive.isBoxOpen(boxName)) await Hive.openBox(boxName);
     if (!Hive.isBoxOpen(pendingBoxName)) await Hive.openBox(pendingBoxName);
   }
 
+  // Helper to ensure box is open (Lazy loading for robustness)
+  Future<Box> _getBox(String name) async {
+    if (!Hive.isBoxOpen(name)) {
+      return await Hive.openBox(name);
+    }
+    return Hive.box(name);
+  }
+
   /// Save tasks to cache
   Future<void> cacheTasks(List<Task> tasks) async {
-    final box = Hive.box(boxName);
+    final box = await _getBox(boxName);
     await box.clear();
     // Convert Task entities to Map for storage (simple json)
     final Map<String, dynamic> data = {
@@ -27,7 +33,7 @@ class TaskLocalDataSource {
 
   /// Get cached tasks
   Future<List<Task>> getCachedTasks() async {
-    final box = Hive.box(boxName);
+    final box = await _getBox(boxName);
     if (box.isEmpty) return [];
     
     final tasks = <Task>[];
@@ -41,12 +47,12 @@ class TaskLocalDataSource {
   // --- Pending Actions Queue ---
   
   Future<void> addPendingAction(PendingAction action) async {
-    final box = Hive.box(pendingBoxName);
+    final box = await _getBox(pendingBoxName);
     await box.add(action.toMap());
   }
 
   Future<List<PendingAction>> getPendingActions() async {
-    final box = Hive.box(pendingBoxName);
+    final box = await _getBox(pendingBoxName);
     final actions = <PendingAction>[];
     for (var i = 0; i < box.length; i++) {
         final map = Map<String, dynamic>.from(box.getAt(i));
@@ -56,7 +62,7 @@ class TaskLocalDataSource {
   }
 
   Future<void> removePendingAction(int key) async {
-    final box = Hive.box(pendingBoxName);
+    final box = await _getBox(pendingBoxName);
     await box.deleteAt(key);
   }
   

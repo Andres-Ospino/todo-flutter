@@ -4,6 +4,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_display.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
+import '../providers/sync_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../providers/tasks_state.dart';
 import '../widgets/create_task_dialog.dart';
@@ -62,10 +63,25 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final currentFilter = ref.watch(taskFilterProvider);
     final filteredTasks = ref.watch(filteredTasksProvider);
     final tasksCount = ref.watch(tasksCountProvider);
+    
+    // Watch sync provider to keep it alive and listen to connectivity
+    final isSyncing = ref.watch(syncProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppConstants.appName),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             const Text(AppConstants.appName),
+             if (isSyncing)
+               Text(
+                 'Sincronizando...', 
+                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                   color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                 ),
+               ),
+          ],
+        ),
         actions: [
           // Menú de filtros
           PopupMenuButton<TaskFilter>(
@@ -93,32 +109,38 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.defaultPadding),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildCounter(
-                  context,
-                  'Total',
-                  tasksCount.total,
-                  Icons.checklist,
+          preferredSize: const Size.fromHeight(50), 
+          child: Column(
+            children: [
+              if (isSyncing)
+                const LinearProgressIndicator(minHeight: 2),
+              Padding(
+                padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildCounter(
+                      context,
+                      'Total',
+                      tasksCount.total,
+                      Icons.checklist,
+                    ),
+                    _buildCounter(
+                      context,
+                      'Pendientes',
+                      tasksCount.pending,
+                      Icons.pending_actions,
+                    ),
+                    _buildCounter(
+                      context,
+                      'Completadas',
+                      tasksCount.completed,
+                      Icons.check_circle,
+                    ),
+                  ],
                 ),
-                _buildCounter(
-                  context,
-                  'Pendientes',
-                  tasksCount.pending,
-                  Icons.pending_actions,
-                ),
-                _buildCounter(
-                  context,
-                  'Completadas',
-                  tasksCount.completed,
-                  Icons.check_circle,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -136,7 +158,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  SizedBox(
+                   SizedBox(
                     height: MediaQuery.of(context).size.height * 0.6,
                     child: EmptyState(
                       message: currentFilter == TaskFilter.all
