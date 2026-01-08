@@ -30,6 +30,7 @@ void main() {
     when(() => mockLocalDataSource.cacheTasks(any())).thenAnswer((_) async {});
     when(() => mockLocalDataSource.getCachedTasks()).thenAnswer((_) async => []);
     when(() => mockLocalDataSource.addPendingAction(any())).thenAnswer((_) async {});
+    when(() => mockLocalDataSource.getPendingActions()).thenAnswer((_) async => <PendingAction>[]);
 
     repository = TaskRepository(
       apiService: mockApiService,
