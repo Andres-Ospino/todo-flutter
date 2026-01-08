@@ -1,17 +1,21 @@
+// ignore_for_file: invalid_annotation_target
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../domain/entities/task.dart';
 
 part 'task_model.freezed.dart';
 part 'task_model.g.dart';
 
+Object? _readId(Map json, String key) {
+  return json['id'] ?? json['_id'];
+}
+
 /// Modelo de datos para Task
-/// Maneja la serialización/deserialización JSON
 @freezed
 class TaskModel with _$TaskModel {
   const TaskModel._();
 
   const factory TaskModel({
-    required String id,
+    @JsonKey(readValue: _readId) required String id,
     required String title,
     String? description,
     required bool completed,
@@ -19,18 +23,9 @@ class TaskModel with _$TaskModel {
     DateTime? updatedAt,
   }) = _TaskModel;
 
-  /// Crea un TaskModel desde JSON
-  /// Maneja el mapeo de _id (MongoDB) a id
-  factory TaskModel.fromJson(Map<String, dynamic> json) {
-    final modifiedJson = Map<String, dynamic>.from(json);
-    if (modifiedJson.containsKey('_id')) {
-      modifiedJson['id'] = modifiedJson['_id'];
-      modifiedJson.remove('_id');
-    }
-    return _$TaskModelFromJson(modifiedJson);
-  }
+  factory TaskModel.fromJson(Map<String, dynamic> json) =>
+      _$TaskModelFromJson(json);
 
-  /// Convierte a entidad de dominio
   Task toEntity() {
     return Task(
       id: id,
@@ -42,7 +37,6 @@ class TaskModel with _$TaskModel {
     );
   }
 
-  /// Crea un TaskModel desde una entidad
   factory TaskModel.fromEntity(Task task) {
     return TaskModel(
       id: task.id,
@@ -76,4 +70,30 @@ class UpdateTaskDto with _$UpdateTaskDto {
 
   factory UpdateTaskDto.fromJson(Map<String, dynamic> json) =>
       _$UpdateTaskDtoFromJson(json);
+}
+
+/// Respuesta paginada
+class PaginatedTasksResponse {
+  final List<TaskModel> data;
+  final int total;
+  final int page;
+  final int limit;
+
+  PaginatedTasksResponse({
+    required this.data,
+    required this.total,
+    required this.page,
+    required this.limit,
+  });
+
+  factory PaginatedTasksResponse.fromJson(Map<String, dynamic> json) {
+    return PaginatedTasksResponse(
+      data: (json['data'] as List)
+          .map((e) => TaskModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      total: json['total'] as int,
+      page: json['page'] as int,
+      limit: json['limit'] as int,
+    );
+  }
 }

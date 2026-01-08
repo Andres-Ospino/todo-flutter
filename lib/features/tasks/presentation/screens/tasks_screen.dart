@@ -18,6 +18,8 @@ class TasksScreen extends ConsumerStatefulWidget {
 }
 
 class _TasksScreenState extends ConsumerState<TasksScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -25,10 +27,26 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     Future.microtask(
       () => ref.read(tasksNotifierProvider.notifier).loadTasks(),
     );
+
+    // Listener para scroll infinito
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(tasksNotifierProvider.notifier).loadMoreTasks();
+    }
   }
 
   Future<void> _refreshTasks() async {
-    await ref.read(tasksNotifierProvider.notifier).loadTasks();
+    await ref.read(tasksNotifierProvider.notifier).loadTasks(refresh: true);
   }
 
   void _showCreateDialog() {
@@ -111,11 +129,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         loading: () => const LoadingIndicator(
           message: 'Cargando tareas...',
         ),
-        loaded: (tasks) {
+        loaded: (tasks, hasMore, isLoadingMore) {
           if (filteredTasks.isEmpty) {
             return RefreshIndicator(
               onRefresh: _refreshTasks,
               child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   SizedBox(
                     height: MediaQuery.of(context).size.height * 0.6,
@@ -136,12 +155,23 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           return RefreshIndicator(
             onRefresh: _refreshTasks,
             child: ListView.builder(
-              itemCount: filteredTasks.length,
+              controller: _scrollController,
+              itemCount: filteredTasks.length + (hasMore ? 1 : 0),
               padding: const EdgeInsets.only(
                 top: AppConstants.smallPadding,
                 bottom: 80, // Espacio para el FAB
               ),
               itemBuilder: (context, index) {
+                // Loader al final
+                if (index == filteredTasks.length) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
                 final task = filteredTasks[index];
                 return TaskItem(key: ValueKey(task.id), task: task);
               },

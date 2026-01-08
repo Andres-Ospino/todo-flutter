@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import '../../../core/config/api_config.dart';
+import '../../../../core/config/api_config.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../models/task_model.dart';
 
 /// Servicio de API para tareas
-/// Maneja todas las peticiones HTTP relacionadas con tareas
 class TaskApiService {
   final Dio _dio;
 
@@ -18,7 +18,6 @@ class TaskApiService {
                 headers: ApiConfig.defaultHeaders,
               ),
             ) {
-    // Interceptor para logging (útil en desarrollo)
     _dio.interceptors.add(
       LogInterceptor(
         requestBody: true,
@@ -28,12 +27,17 @@ class TaskApiService {
     );
   }
 
-  /// Obtiene todas las tareas con filtros opcionales
-  Future<List<TaskModel>> getTasks({
+  /// Obtiene todas las tareas con paginación
+  Future<PaginatedTasksResponse> getTasks({
     bool? completed,
+    int page = 1,
+    int limit = AppConstants.tasksPerPage,
   }) async {
     try {
-      final queryParameters = <String, dynamic>{};
+      final queryParameters = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
 
       if (completed != null) {
         queryParameters['completed'] = completed;
@@ -44,9 +48,7 @@ class TaskApiService {
         queryParameters: queryParameters,
       );
 
-      // El backend retorna un array de tareas
-      final List<dynamic> data = response.data as List;
-      return data.map((json) => TaskModel.fromJson(json)).toList();
+      return PaginatedTasksResponse.fromJson(response.data);
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -66,7 +68,7 @@ class TaskApiService {
     }
   }
 
-  /// Actualiza una tarea (toggle completed)
+  /// Actualiza una tarea
   Future<TaskModel> updateTask(String id, UpdateTaskDto dto) async {
     try {
       final response = await _dio.patch(
@@ -89,38 +91,23 @@ class TaskApiService {
     }
   }
 
-  /// Maneja los errores de Dio y los convierte en excepciones legibles
   Exception _handleError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return Exception('Error de conexión: Tiempo de espera agotado');
-
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
         final message = error.response?.data['message'] ?? 'Error desconocido';
-
-        switch (statusCode) {
-          case 400:
-            return Exception('Solicitud inválida: $message');
-          case 404:
-            return Exception('No encontrado: $message');
-          case 500:
-            return Exception('Error del servidor: $message');
-          default:
-            return Exception('Error HTTP $statusCode: $message');
-        }
-
+        return Exception('Error $statusCode: $message');
       case DioExceptionType.cancel:
         return Exception('Solicitud cancelada');
-
       case DioExceptionType.unknown:
         if (error.message?.contains('SocketException') ?? false) {
           return Exception('Sin conexión a internet');
         }
         return Exception('Error inesperado: ${error.message}');
-
       default:
         return Exception('Error desconocido');
     }

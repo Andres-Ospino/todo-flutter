@@ -15,14 +15,22 @@ final _privateConstructorUsedError = UnsupportedError(
   'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
 );
 
+TaskModel _$TaskModelFromJson(Map<String, dynamic> json) {
+  return _TaskModel.fromJson(json);
+}
+
 /// @nodoc
 mixin _$TaskModel {
+  @JsonKey(readValue: _readId)
   String get id => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   bool get completed => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
+
+  /// Serializes this TaskModel to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
   /// Create a copy of TaskModel
   /// with the given fields replaced by the non-null parameter values.
@@ -37,7 +45,7 @@ abstract class $TaskModelCopyWith<$Res> {
       _$TaskModelCopyWithImpl<$Res, TaskModel>;
   @useResult
   $Res call({
-    String id,
+    @JsonKey(readValue: _readId) String id,
     String title,
     String? description,
     bool completed,
@@ -110,7 +118,7 @@ abstract class _$$TaskModelImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    String id,
+    @JsonKey(readValue: _readId) String id,
     String title,
     String? description,
     bool completed,
@@ -172,10 +180,10 @@ class __$$TaskModelImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-
+@JsonSerializable()
 class _$TaskModelImpl extends _TaskModel {
   const _$TaskModelImpl({
-    required this.id,
+    @JsonKey(readValue: _readId) required this.id,
     required this.title,
     this.description,
     required this.completed,
@@ -183,7 +191,11 @@ class _$TaskModelImpl extends _TaskModel {
     this.updatedAt,
   }) : super._();
 
+  factory _$TaskModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TaskModelImplFromJson(json);
+
   @override
+  @JsonKey(readValue: _readId)
   final String id;
   @override
   final String title;
@@ -218,6 +230,7 @@ class _$TaskModelImpl extends _TaskModel {
                 other.updatedAt == updatedAt));
   }
 
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
@@ -236,11 +249,16 @@ class _$TaskModelImpl extends _TaskModel {
   @pragma('vm:prefer-inline')
   _$$TaskModelImplCopyWith<_$TaskModelImpl> get copyWith =>
       __$$TaskModelImplCopyWithImpl<_$TaskModelImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$TaskModelImplToJson(this);
+  }
 }
 
 abstract class _TaskModel extends TaskModel {
   const factory _TaskModel({
-    required final String id,
+    @JsonKey(readValue: _readId) required final String id,
     required final String title,
     final String? description,
     required final bool completed,
@@ -249,7 +267,11 @@ abstract class _TaskModel extends TaskModel {
   }) = _$TaskModelImpl;
   const _TaskModel._() : super._();
 
+  factory _TaskModel.fromJson(Map<String, dynamic> json) =
+      _$TaskModelImpl.fromJson;
+
   @override
+  @JsonKey(readValue: _readId)
   String get id;
   @override
   String get title;

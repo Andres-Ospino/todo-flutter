@@ -1,164 +1,186 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../data/repositories/task_repository.dart';
 import '../../domain/entities/task.dart';
 import 'tasks_state.dart';
 
-/// Provider del repositorio de tareas
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   return TaskRepository();
 });
 
-/// Provider del filtro actual
 final taskFilterProvider = StateProvider<TaskFilter>((ref) {
   return TaskFilter.all;
 });
 
-/// Notifier para manejar el estado de las tareas
 class TasksNotifier extends StateNotifier<TasksState> {
   final TaskRepository _repository;
+  
+  // Estado interno para paginación
+  int _currentPage = 1;
 
   TasksNotifier(this._repository) : super(const TasksState.initial());
 
-  /// Carga todas las tareas
-  Future<void> loadTasks() async {
+  /// Carga inicial de tareas (reinicia pagina)
+  Future<void> loadTasks({bool refresh = false}) async {
+    if (refresh) {
+      _currentPage = 1;
+    }
+
+    final isLoading = state.maybeMap(loading: (_) => true, orElse: () => false);
+    final isLoaded = state.maybeMap(loaded: (_) => true, orElse: () => false);
+
+    if (!refresh && (isLoading || isLoaded)) {
+       return;
+    }
+
     state = const TasksState.loading();
 
     try {
-      final tasks = await _repository.getTasks();
-      state = TasksState.loaded(tasks);
+      final result = await _repository.getTasks(
+        page: 1,
+        limit: AppConstants.tasksPerPage,
+      );
+      
+      _currentPage = 1;
+      state = TasksState.loaded(
+        result.tasks, 
+        hasMore: result.hasMore,
+        isLoadingMore: false,
+      );
     } catch (e) {
       state = TasksState.error(e.toString());
     }
   }
 
-  /// Crea una nueva tarea
-  Future<void> createTask({
-    required String title,
-    String? description,
-  }) async {
+  /// Carga la siguiente página de tareas
+  Future<void> loadMoreTasks() async {
+    final currentState = state.mapOrNull(loaded: (s) => s);
+    if (currentState == null) return;
+    
+    if (!currentState.hasMore || currentState.isLoadingMore) return;
+    
+    // Poner isLoadingMore en true
+    state = currentState.copyWith(isLoadingMore: true);
+
     try {
-      // Crear la tarea en el backend
-      final newTask = await _repository.createTask(
-        title: title,
-        description: description,
+      final nextPage = _currentPage + 1;
+      final result = await _repository.getTasks(
+        page: nextPage,
+        limit: AppConstants.tasksPerPage,
       );
 
-      // Actualizar el estado con la nueva tarea
-      state.whenOrNull(
-        loaded: (tasks) {
-          state = TasksState.loaded([newTask, ...tasks]);
-        },
+      _currentPage = nextPage;
+      
+      // Concatenar tareas
+      state = TasksState.loaded(
+        [...currentState.tasks, ...result.tasks],
+        hasMore: result.hasMore,
+        isLoadingMore: false,
       );
+    } catch (e) {
+      // Si falla, revertir isLoadingMore pero mantener lista
+      state = currentState.copyWith(isLoadingMore: false);
+      print('Error loading more tasks: $e'); 
+    }
+  }
 
-      // Si no estábamos en estado loaded o hubo error previo, recargar todas
-      state.maybeWhen(
-        loaded: (_) {},
-        orElse: () => loadTasks(),
-      );
+  Future<void> createTask({required String title, String? description}) async {
+    try {
+      final newTask = await _repository.createTask(title: title, description: description);
+      
+      state.whenOrNull(loaded: (tasks, hasMore, isLoadingMore) {
+        state = TasksState.loaded(
+          [newTask, ...tasks],
+          hasMore: hasMore,
+          isLoadingMore: isLoadingMore,
+        );
+      });
+
+      final isLoaded = state.maybeMap(loaded: (_) => true, orElse: () => false);
+      if (!isLoaded) {
+        loadTasks(refresh: true);
+      }
     } catch (e) {
       state = TasksState.error(e.toString());
     }
   }
 
-  /// Alterna el estado de completado de una tarea
   Future<void> toggleTaskCompletion(String id, bool currentStatus) async {
-    // Optimistic update: actualizar UI inmediatamente
-    final List<Task> previousTasks = [];
-    state.whenOrNull(
-      loaded: (tasks) {
-        previousTasks.addAll(tasks);
-        final updatedTasks = tasks.map((task) {
-          if (task.id == id) {
-            return task.copyWith(completed: !currentStatus);
-          }
-          return task;
-        }).toList();
-        state = TasksState.loaded(updatedTasks);
-      },
-    );
+    final currentState = state.mapOrNull(loaded: (s) => s);
+    if (currentState == null) return;
+
+    final previousTasks = currentState.tasks;
+    final updatedTasks = previousTasks.map((task) {
+      if (task.id == id) return task.copyWith(completed: !currentStatus);
+      return task;
+    }).toList();
+    
+    state = currentState.copyWith(tasks: updatedTasks);
 
     try {
-      // Actualizar en el backend
       await _repository.toggleTaskCompletion(id, !currentStatus);
     } catch (e) {
-      // Si falla, revertir al estado anterior
-      if (previousTasks.isNotEmpty) {
-        state = TasksState.loaded(previousTasks);
-      }
+      state = currentState.copyWith(tasks: previousTasks); // Revert
       state = TasksState.error(e.toString());
     }
   }
 
-  /// Elimina una tarea
   Future<void> deleteTask(String id) async {
-    // Optimistic update: eliminar de la UI inmediatamente
-    final List<Task> previousTasks = [];
-    state.whenOrNull(
-      loaded: (tasks) {
-        previousTasks.addAll(tasks);
-        final updatedTasks = tasks.where((task) => task.id != id).toList();
-        state = TasksState.loaded(updatedTasks);
-      },
-    );
+    final currentState = state.mapOrNull(loaded: (s) => s);
+    if (currentState == null) return;
+
+    final previousTasks = currentState.tasks;
+    final updatedTasks = previousTasks.where((task) => task.id != id).toList();
+    
+    state = currentState.copyWith(tasks: updatedTasks);
 
     try {
-      // Eliminar en el backend
       await _repository.deleteTask(id);
     } catch (e) {
-      // Si falla, revertir al estado anterior
-      if (previousTasks.isNotEmpty) {
-        state = TasksState.loaded(previousTasks);
-      }
-      state = TasksState.error(e.toString());
+       state = currentState.copyWith(tasks: previousTasks); // Revert
+       state = TasksState.error(e.toString());
     }
   }
 
-  /// Filtra las tareas según el filtro actual
   List<Task> getFilteredTasks(TaskFilter filter) {
-    return state.whenOrNull(
-          loaded: (tasks) {
-            switch (filter) {
-              case TaskFilter.all:
-                return tasks;
-              case TaskFilter.pending:
-                return tasks.where((task) => !task.completed).toList();
-              case TaskFilter.completed:
-                return tasks.where((task) => task.completed).toList();
-            }
-          },
-        ) ??
-        [];
+    return state.maybeWhen(
+      loaded: (tasks, _, __) {
+        switch (filter) {
+          case TaskFilter.all:
+            return tasks;
+          case TaskFilter.pending:
+            return tasks.where((task) => !task.completed).toList();
+          case TaskFilter.completed:
+            return tasks.where((task) => task.completed).toList();
+        }
+      },
+      orElse: () => [],
+    );
   }
 }
 
-/// Provider del notifier de tareas
-final tasksNotifierProvider =
-    StateNotifierProvider<TasksNotifier, TasksState>((ref) {
+final tasksNotifierProvider = StateNotifierProvider<TasksNotifier, TasksState>((ref) {
   final repository = ref.watch(taskRepositoryProvider);
   return TasksNotifier(repository);
 });
 
-/// Provider de tareas filtradas
-/// Este provider combina el estado de tareas con el filtro actual
 final filteredTasksProvider = Provider<List<Task>>((ref) {
   final filter = ref.watch(taskFilterProvider);
   final notifier = ref.read(tasksNotifierProvider.notifier);
-
+  // Subscribe to state changes
+  ref.watch(tasksNotifierProvider); 
   return notifier.getFilteredTasks(filter);
 });
 
-/// Provider para contar tareas por estado
-final tasksCountProvider = Provider<({int total, int pending, int completed})>(
-  (ref) {
-    final tasksState = ref.watch(tasksNotifierProvider);
-
-    return tasksState.whenOrNull(
-          loaded: (tasks) {
-            final pending = tasks.where((t) => !t.completed).length;
-            final completed = tasks.where((t) => t.completed).length;
-            return (total: tasks.length, pending: pending, completed: completed);
-          },
-        ) ??
-        (total: 0, pending: 0, completed: 0);
-  },
-);
+final tasksCountProvider = Provider<({int total, int pending, int completed})>((ref) {
+  final tasksState = ref.watch(tasksNotifierProvider);
+  
+  return tasksState.maybeWhen(
+    loaded: (tasks, _, __) {
+        final pending = tasks.where((t) => !t.completed).length;
+        final completed = tasks.where((t) => t.completed).length;
+        return (total: tasks.length, pending: pending, completed: completed);
+    },
+    orElse: () => (total: 0, pending: 0, completed: 0),
+  );
+});
