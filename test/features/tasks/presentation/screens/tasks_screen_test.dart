@@ -40,7 +40,7 @@ void main() {
     await tester.pump(); // Allow init logic
 
     // Assert
-    expect(find.text(AppConstants.appName), findsOneWidget); // Use constant
+    expect(find.text(AppConstants.appName), findsAtLeastNWidgets(1)); // Use constant - can be multiple in SliverAppBar.large
     expect(find.byType(FloatingActionButton), findsOneWidget);
   });
 }
