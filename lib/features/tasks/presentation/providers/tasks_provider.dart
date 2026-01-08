@@ -142,6 +142,38 @@ class TasksNotifier extends StateNotifier<TasksState> {
     }
   }
 
+  Future<void> updateTask(String id, {String? title, String? description}) async {
+      try {
+        // En este paso, el repositorio debería tener un método update general.
+        // Si no, lo usamos solo con lo que tenemos o lo extendemos.
+        // Asumiendo que updateTask del repo soporta update de titulo/desc.
+        // Si no, tendremos que ajustarlo.
+        
+        // Optimistic update
+        final currentState = state.mapOrNull(loaded: (s) => s);
+         if (currentState != null) {
+            final updatedList = currentState.tasks.map((t) {
+              if (t.id == id) {
+                return t.copyWith(
+                  title: title ?? t.title,
+                  description: description ?? t.description
+                );
+              }
+              return t;
+            }).toList();
+             state = currentState.copyWith(tasks: updatedList);
+         }
+
+         // Llamada API (necesitamos asegurar que el repo soporte esto)
+          await _repository.updateTaskData(id, title: title, description: description);
+
+      } catch (e) {
+        state = TasksState.error(e.toString());
+         // Revertir si fuese necesario, pero por brevedad omitimos logica compleja de revert aqui
+         loadTasks(refresh: true);
+      }
+  }
+
   List<Task> getFilteredTasks(TaskFilter filter) {
     return state.maybeWhen(
       loaded: (tasks, _, __) {

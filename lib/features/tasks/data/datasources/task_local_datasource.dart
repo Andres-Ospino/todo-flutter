@@ -55,15 +55,16 @@ class TaskLocalDataSource {
     final box = await _getBox(pendingBoxName);
     final actions = <PendingAction>[];
     for (var i = 0; i < box.length; i++) {
+        final key = box.keyAt(i); // Use REAL Hive key
         final map = Map<String, dynamic>.from(box.getAt(i));
-        actions.add(PendingAction.fromMap(map, i)); // Pass index (key)
+        actions.add(PendingAction.fromMap(map, key)); 
     }
     return actions;
   }
 
   Future<void> removePendingAction(int key) async {
     final box = await _getBox(pendingBoxName);
-    await box.deleteAt(key);
+    await box.delete(key); // Use delete(key) instead of deleteAt(index)
   }
   
   // Helpers

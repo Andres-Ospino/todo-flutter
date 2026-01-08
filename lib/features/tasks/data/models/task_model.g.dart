@@ -41,7 +41,15 @@ Map<String, dynamic> _$$CreateTaskDtoImplToJson(_$CreateTaskDtoImpl instance) =>
     };
 
 _$UpdateTaskDtoImpl _$$UpdateTaskDtoImplFromJson(Map<String, dynamic> json) =>
-    _$UpdateTaskDtoImpl(completed: json['completed'] as bool?);
+    _$UpdateTaskDtoImpl(
+      title: json['title'] as String?,
+      description: json['description'] as String?,
+      completed: json['completed'] as bool?,
+    );
 
 Map<String, dynamic> _$$UpdateTaskDtoImplToJson(_$UpdateTaskDtoImpl instance) =>
-    <String, dynamic>{'completed': instance.completed};
+    <String, dynamic>{
+      'title': instance.title,
+      'description': instance.description,
+      'completed': instance.completed,
+    };

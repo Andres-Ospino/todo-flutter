@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart'; // Import theme provider
 import 'features/tasks/data/datasources/task_local_datasource.dart';
 import 'features/tasks/presentation/screens/tasks_screen.dart';
 
@@ -31,17 +32,20 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the theme provider for changes
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'To-Do App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode, // Use the dynamic theme mode
       home: const TasksScreen(),
     );
   }

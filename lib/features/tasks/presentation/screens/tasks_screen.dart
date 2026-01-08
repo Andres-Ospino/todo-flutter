@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/responsive/breakpoints.dart';
+import '../../../../core/theme/theme_provider.dart'; // Import theme provider
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_display.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../providers/sync_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../providers/tasks_state.dart';
-import '../widgets/create_task_dialog.dart';
+import '../widgets/task_dialog.dart';
 import '../widgets/task_item.dart';
+import '../widgets/task_filter_bar.dart';
+import 'dart:math';
 
-/// Pantalla principal de tareas
+/// Pantalla principal de tareas con UI Premium y Responsiva
 class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
 
@@ -24,12 +29,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   @override
   void initState() {
     super.initState();
-    // Cargar tareas al iniciar
     Future.microtask(
       () => ref.read(tasksNotifierProvider.notifier).loadTasks(),
     );
-
-    // Listener para scroll infinito
     _scrollController.addListener(_onScroll);
   }
 
@@ -40,8 +42,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200) {
       ref.read(tasksNotifierProvider.notifier).loadMoreTasks();
     }
   }
@@ -53,197 +56,281 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   void _showCreateDialog() {
     showDialog(
       context: context,
-      builder: (context) => const CreateTaskDialog(),
+      builder: (context) => const TaskDialog(),
+    );
+  }
+
+  void _showSettings() {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => const SettingsSheet(), // Extracted widget
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(tasksNotifierProvider);
-    final currentFilter = ref.watch(taskFilterProvider);
     final filteredTasks = ref.watch(filteredTasksProvider);
     final tasksCount = ref.watch(tasksCountProvider);
-    
-    // Watch sync provider to keep it alive and listen to connectivity
     final isSyncing = ref.watch(syncProvider);
+    final theme = Theme.of(context);
+    
+    // Logic for Responsive Layout
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = Breakpoints.isDesktop(screenWidth);
+    const double maxContentWidth = 800.0;
+    final double horizontalPadding = max(0.0, (screenWidth - maxContentWidth) / 2);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-             const Text(AppConstants.appName),
-             if (isSyncing)
-               Text(
-                 'Sincronizando...', 
-                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                   color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
-                 ),
-               ),
-          ],
-        ),
-        actions: [
-          // Menú de filtros
-          PopupMenuButton<TaskFilter>(
-            icon: const Icon(Icons.filter_list),
-            tooltip: 'Filtrar tareas',
-            onSelected: (filter) {
-              ref.read(taskFilterProvider.notifier).update((state) => filter);
-            },
-            itemBuilder: (context) => [
-              for (final filter in TaskFilter.values)
-                PopupMenuItem(
-                  value: filter,
-                  child: Row(
-                    children: [
-                      if (currentFilter == filter)
-                        const Icon(Icons.check, size: 20)
-                      else
-                        const SizedBox(width: 20),
-                      const SizedBox(width: 8),
-                      Text(filter.label),
-                    ],
-                  ),
+      body: RefreshIndicator(
+        onRefresh: _refreshTasks,
+        displacement: 100, 
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // 1. Modern Sliver App Bar (Full Width)
+            SliverAppBar.large(
+              title: const Text(AppConstants.appName),
+              centerTitle: false,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: _showSettings,
                 ),
-            ],
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50), 
-          child: Column(
-            children: [
-              if (isSyncing)
-                const LinearProgressIndicator(minHeight: 2),
-              Padding(
-                padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                const SizedBox(width: 8),
+              ],
+              bottom: isSyncing 
+                  ? PreferredSize(
+                      preferredSize: const Size.fromHeight(4),
+                      child: LinearProgressIndicator(
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                      ),
+                    )
+                  : null,
+            ),
+
+            // 2. Filters & Stats Header (Centered content)
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildCounter(
-                      context,
-                      'Total',
-                      tasksCount.total,
-                      Icons.checklist,
-                    ),
-                    _buildCounter(
-                      context,
-                      'Pendientes',
-                      tasksCount.pending,
-                      Icons.pending_actions,
-                    ),
-                    _buildCounter(
-                      context,
-                      'Completadas',
-                      tasksCount.completed,
-                      Icons.check_circle,
+                    const SizedBox(height: 8),
+                    const TaskFilterBar(),
+                    
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Resumen',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                           Row(
+                             children: [
+                               _SimpleCounter(
+                                 label: 'Total', 
+                                 count: tasksCount.total, 
+                                 color: theme.colorScheme.primary
+                               ),
+                               const SizedBox(width: 16),
+                               _SimpleCounter(
+                                 label: 'Pendiente', 
+                                 count: tasksCount.pending, 
+                                 color: theme.colorScheme.tertiary 
+                               ),
+                             ],
+                           ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-      body: tasksState.when(
-        initial: () => const Center(
-          child: Text('Listo para cargar tareas'),
-        ),
-        loading: () => const LoadingIndicator(
-          message: 'Cargando tareas...',
-        ),
-        loaded: (tasks, hasMore, isLoadingMore) {
-          if (filteredTasks.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: _refreshTasks,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                   SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    child: EmptyState(
-                      message: currentFilter == TaskFilter.all
-                          ? AppConstants.emptyTasksMessage
-                          : 'No hay tareas ${currentFilter.label.toLowerCase()}',
-                      hint: currentFilter == TaskFilter.all
-                          ? AppConstants.emptyTasksHint
-                          : null,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
+            ),
 
-          return RefreshIndicator(
-            onRefresh: _refreshTasks,
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: filteredTasks.length + (hasMore ? 1 : 0),
-              padding: const EdgeInsets.only(
-                top: AppConstants.smallPadding,
-                bottom: 80, // Espacio para el FAB
-              ),
-              itemBuilder: (context, index) {
-                // Loader al final
-                if (index == filteredTasks.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(
-                      child: CircularProgressIndicator(),
+            // 3. Task List
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              sliver: tasksState.when(
+                initial: () => const SliverFillRemaining(
+                  child: Center(child: Text('Iniciando...')),
+                ),
+                loading: () => const SliverFillRemaining(
+                  child: LoadingIndicator(message: ''),
+                ),
+                error: (msg) => SliverFillRemaining(
+                  child: ErrorDisplay(message: msg, onRetry: _refreshTasks),
+                ),
+                loaded: (tasks, hasMore, _) {
+                  if (filteredTasks.isEmpty) {
+                    return SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: FractionallySizedBox(
+                        heightFactor: 0.6,
+                        child: EmptyState(
+                           message: 'No hay tareas encontradas',
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (isDesktop) {
+                    return SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 400,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childAspectRatio: 1.8,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                           if (index == filteredTasks.length) {
+                             return const Padding(
+                               padding: EdgeInsets.all(24.0),
+                               child: Center(child: CircularProgressIndicator()),
+                             );
+                           }
+                           final task = filteredTasks[index];
+                           return TaskItem(key: ValueKey(task.id), task: task)
+                              .animate()
+                              .fadeIn(duration: 400.ms, delay: (50 * index).ms);
+                        },
+                        childCount: filteredTasks.length + (hasMore ? 1 : 0),
+                      ),
+                    );
+                  }
+
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index == filteredTasks.length) {
+                           return const Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        final task = filteredTasks[index];
+                        return TaskItem(key: ValueKey(task.id), task: task)
+                            .animate()
+                            .fadeIn(duration: 400.ms, delay: (50 * index).ms)
+                            .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad);
+                      },
+                      childCount: filteredTasks.length + (hasMore ? 1 : 0),
                     ),
                   );
-                }
-
-                final task = filteredTasks[index];
-                return TaskItem(key: ValueKey(task.id), task: task);
-              },
+                },
+              ),
             ),
-          );
-        },
-        error: (message) => ErrorDisplay(
-          message: message,
-          onRetry: _refreshTasks,
+            
+            const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateDialog,
-        icon: const Icon(Icons.add),
-        label: const Text('Nueva Tarea'),
+        icon: const Icon(Icons.add_task),
+        label: const Text('Nueva', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
+}
 
-  Widget _buildCounter(
-    BuildContext context,
-    String label,
-    int count,
-    IconData icon,
-  ) {
-    return Column(
+class _SimpleCounter extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+
+  const _SimpleCounter({required this.label, required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$count',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-            ),
-          ],
-        ),
         Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
+          '$count', 
+          style: TextStyle(
+            fontWeight: FontWeight.bold, 
+            fontSize: 16,
+            color: color,
+          )
         ),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
+    );
+  }
+}
+
+/// Settings Sheet extracted for better state management
+class SettingsSheet extends ConsumerWidget {
+  const SettingsSheet({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+      width: double.infinity,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Configuración', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 24),
+          
+          const Text('Tema', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                value: ThemeMode.system, 
+                label: Text('Sistema'), 
+                icon: Icon(Icons.brightness_auto)
+              ),
+              ButtonSegment(
+                value: ThemeMode.light, 
+                label: Text('Claro'), 
+                icon: Icon(Icons.light_mode)
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark, 
+                label: Text('Oscuro'), 
+                icon: Icon(Icons.dark_mode)
+              ),
+            ],
+            selected: {themeMode},
+            onSelectionChanged: (Set<ThemeMode> newSelection) {
+              ref.read(themeProvider.notifier).setTheme(newSelection.first);
+            },
+          ),
+          
+          const SizedBox(height: 24),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('Acerca de'),
+            subtitle: const Text('To-Do App v1.0.0'),
+            contentPadding: EdgeInsets.zero,
+            onTap: () {},
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonal(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

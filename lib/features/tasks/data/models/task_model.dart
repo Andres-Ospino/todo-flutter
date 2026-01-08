@@ -65,6 +65,8 @@ class CreateTaskDto with _$CreateTaskDto {
 @freezed
 class UpdateTaskDto with _$UpdateTaskDto {
   const factory UpdateTaskDto({
+    String? title,
+    String? description,
     bool? completed,
   }) = _UpdateTaskDto;
 

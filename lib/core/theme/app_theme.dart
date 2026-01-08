@@ -1,140 +1,86 @@
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Colores base - Violeta y Teal para mayor viveza
-  static const Color _primaryColor = Color(0xFF6366F1); // Indigo 500
-  static const Color _secondaryColor = Color(0xFF14B8A6); // Teal 500
-  static const Color _errorColor = Color(0xFFEF4444); // Red 500
-  
-  // Light Theme
+  // Cambiamos a 'Material3' default preset or 'BrandBlue' for safer light mode
+  // The user didn't like the light mode, often because 'Indigo' can be too saturated or low contrast on some shades.
+  // Let's try 'DeepBlue' (Scheme.deepBlue) which is very standard, or tweak the current ONE.
+  // We will stick to Indigo but improve the surface mode.
+  static const FlexScheme _scheme = FlexScheme.indigo;
+
+  /// Tema Claro Premium Refinado
   static ThemeData get lightTheme {
-    return ThemeData(
+    return FlexThemeData.light(
+      scheme: _scheme,
       useMaterial3: true,
-      brightness: Brightness.light,
-      
-      // Color Scheme
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _primaryColor,
-        brightness: Brightness.light,
-        primary: _primaryColor,
-        secondary: _secondaryColor,
-        error: _errorColor,
+      // Usamos 'highScaffoldLowSurface' para que el fondo sea blanco/gris claro 
+      // y las tarjetas tengan un color ligeramente distinto (surface), dando mejor contraste y profundidad.
+      surfaceMode: FlexSurfaceMode.highScaffoldLowSurface, 
+      blendLevel: 7,
+      subThemesData: const FlexSubThemesData(
+        blendOnLevel: 10,
+        blendOnColors: false,
+        useTextTheme: true,
+        useM2StyleDividerInM3: true,
+        alignedDropdown: true,
+        useInputDecoratorThemeInDialogs: true,
+        // Card styling
+        cardElevation: 1, // Un poco de elevación para separar del fondo
+        cardRadius: 16.0,
+        // Inputs
+        inputDecoratorBorderType: FlexInputBorderType.outline,
+        inputDecoratorRadius: 16.0,
+        inputDecoratorUnfocusedBorderIsColored: false, // Cleaner look
+        // FAB
+        fabUseShape: true,
+        fabRadius: 16.0,
+        // Chip
+        chipRadius: 12.0,
+        chipSchemeColor: SchemeColor.primary,
+        // PopupMenu
+        popupMenuRadius: 12.0,
+        popupMenuElevation: 3.0,
       ),
-      
-      // Typography - Google Fonts se pueden añadir después si se desea
-      // Por ahora usamos la default mejorada de M3
-      
-      // AppBar
-      appBarTheme: const AppBarTheme(
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0, // Flat always
+      keyColors: const FlexKeyColors(
+        useSecondary: true,
+        useTertiary: true,
       ),
-      
-      // Card
-      cardTheme: CardThemeData(
-        elevation: 0, // Flat style modern
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-        ),
-        clipBehavior: Clip.antiAlias,
-      ),
-      
-      // FloatingActionButton
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-      ),
-      
-      // Input Decoration
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: _primaryColor, width: 2),
-        ),
-      ),
-      
-      // Chips (para filtros)
-      chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide.none,
-        backgroundColor: Colors.grey.shade100,
-        selectedColor: _primaryColor.withOpacity(0.1),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-      ),
+      visualDensity: VisualDensity.standard,
+      fontFamily: GoogleFonts.outfit().fontFamily,
     );
   }
-  
-  // Dark Theme
+
+  /// Tema Oscuro Premium
   static ThemeData get darkTheme {
-    return ThemeData(
+    return FlexThemeData.dark(
+      scheme: _scheme,
       useMaterial3: true,
-      brightness: Brightness.dark,
-      
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _primaryColor,
-        brightness: Brightness.dark,
-        primary: _primaryColor, // Maintain branding in dark
-        secondary: _secondaryColor,
-        error: _errorColor,
-        surface: const Color(0xFF1F2937), // Cool gray 800
+      surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
+      blendLevel: 13,
+      subThemesData: const FlexSubThemesData(
+        blendOnLevel: 20,
+        useTextTheme: true,
+        useM2StyleDividerInM3: true,
+        alignedDropdown: true,
+        useInputDecoratorThemeInDialogs: true,
+        cardElevation: 0.0,
+        cardRadius: 16.0,
+        inputDecoratorBorderType: FlexInputBorderType.outline,
+        inputDecoratorRadius: 16.0,
+        inputDecoratorUnfocusedBorderIsColored: false,
+        fabUseShape: true,
+        fabRadius: 16.0,
+        checkboxSchemeColor: SchemeColor.primary,
+        popupMenuRadius: 12.0,
+        popupMenuElevation: 3.0,
       ),
-      
-      scaffoldBackgroundColor: const Color(0xFF111827), // Cool gray 900
-      
-      appBarTheme: const AppBarTheme(
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
+      keyColors: const FlexKeyColors(
+        useSecondary: true,
+        useTertiary: true,
       ),
-      
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: const Color(0xFF1F2937),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.white.withOpacity(0.05)),
-        ),
-      ),
-      
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-      ),
-       
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: const Color(0xFF374151), // Cool gray 700
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: _primaryColor, width: 2),
-        ),
-      ),
-      
-       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide.none,
-        backgroundColor: const Color(0xFF374151),
-        selectedColor: _primaryColor.withOpacity(0.2),
-         labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-      ),
+      visualDensity: VisualDensity.standard,
+      fontFamily: GoogleFonts.outfit().fontFamily,
     );
   }
 }

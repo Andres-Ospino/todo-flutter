@@ -32,7 +32,6 @@ class TaskRepository {
       final tasks = response.data.map((model) => model.toEntity()).toList();
       
       // 2. Si es la primera página y no hay filtro, actualizar el Caché completo
-      // (Para simplificar este demo, cacheamos lo que llega si es página 1)
       if (page == 1 && completed == null) {
         await _localDataSource.cacheTasks(tasks);
       }
@@ -42,18 +41,16 @@ class TaskRepository {
 
       return (tasks: tasks, hasMore: hasMore);
     } catch (e) {
-      // 3. Fallback a Caché si falla la API (Solo soportamos paginación local básica o todo)
-      // Para este MVP, devolvemos todo lo del caché
+      // 3. Fallback a Caché
       print('🌐 Error de red, usando caché local: $e');
       final localTasks = await _localDataSource.getCachedTasks();
       
-      // Simular filtrado local
       final filtered = localTasks.where((t) {
         if (completed != null) return t.completed == completed;
         return true;
       }).toList();
 
-      return (tasks: filtered, hasMore: false); // Asumimos no more pages locally for now
+      return (tasks: filtered, hasMore: false);
     }
   }
 
@@ -66,14 +63,11 @@ class TaskRepository {
       final dto = CreateTaskDto(title: title, description: description);
       final taskModel = await _apiService.createTask(dto);
       
-      // Si tuvimos éxito (online), intentamos sincronizar pendientes
       syncPendingActions();
 
       return taskModel.toEntity();
     } catch (e) {
-      // Si el error es de conexión (DioExceptionType)
       if (_isNetworkError(e)) {
-        // Generar ID temporal y guardar acción pendiente
         final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
         final offlineTask = Task(
           id: tempId,
@@ -83,14 +77,11 @@ class TaskRepository {
           createdAt: DateTime.now(),
         );
         
-        // Guardar acción pendiente
         await _localDataSource.addPendingAction(PendingAction(
           type: ActionType.create,
           payload: {'title': title, 'description': description, 'tempId': tempId},
         ));
 
-        // Tambien guardar en caché para que se vea inmediatamente (Optimistic)
-        // (Esto requiere leer el caché actual, agregar y guardar)
         final currentCache = await _localDataSource.getCachedTasks();
         await _localDataSource.cacheTasks([offlineTask, ...currentCache]);
 
@@ -100,46 +91,39 @@ class TaskRepository {
     }
   }
 
-  /// Sincroniza las acciones pendientes
-  Future<void> syncPendingActions() async {
-    final pendingActions = await _localDataSource.getPendingActions();
-    if (pendingActions.isEmpty) return;
+  /// Actualiza datos de la tarea (título, descripción)
+  Future<Task> updateTaskData(String id, {String? title, String? description}) async {
+    try {
+      final dto = UpdateTaskDto(title: title, description: description);
+      // Asumimos que la API usa el mismo endpoint PATCH para todo
+      final taskModel = await _apiService.updateTask(id, dto);
+      
+      syncPendingActions();
 
-    print('🔄 [Repo] Intentando sincronizar ${pendingActions.length} acciones...');
-
-    for (var action in pendingActions) {
-      try {
-        switch (action.type) {
-          case ActionType.create:
-            await _apiService.createTask(CreateTaskDto(
-              title: action.payload['title'],
-              description: action.payload['description'],
-            ));
-            break;
-            
-          case ActionType.update:
-            await _apiService.updateTask(
-              action.payload['id'],
-              UpdateTaskDto(completed: action.payload['completed']),
-            );
-            break;
-
-          case ActionType.delete:
-            await _apiService.deleteTask(action.payload['id']);
-            break;
-        }
+      return taskModel.toEntity();
+    } catch (e) {
+      if (_isNetworkError(e)) {
+         await _localDataSource.addPendingAction(PendingAction(
+          type: ActionType.update, // Usamos la misma acción update
+          payload: {'id': id, 'title': title, 'description': description},
+        ));
         
-        // Si éxito, borrar de la cola
-        if (action.key != null) {
-          await _localDataSource.removePendingAction(action.key!);
+        // Actualizar caché local optimísticamente
+        final currentCache = await _localDataSource.getCachedTasks();
+        final index = currentCache.indexWhere((t) => t.id == id);
+        if (index != -1) {
+          final updatedTask = currentCache[index].copyWith(
+            title: title ?? currentCache[index].title,
+            description: description ?? currentCache[index].description,
+          );
+          currentCache[index] = updatedTask;
+          await _localDataSource.cacheTasks(currentCache);
+          return updatedTask;
         }
-      } catch (e) {
-        print('❌ Error sincronizando acción individual: $e');
-        // Continuamos con la siguiente
       }
+      rethrow;
     }
   }
-
 
   Future<Task> toggleTaskCompletion(String id, bool completed) async {
     try {
@@ -151,13 +135,11 @@ class TaskRepository {
       return taskModel.toEntity();
     } catch (e) {
       if (_isNetworkError(e)) {
-         // Guardar acción pendiente
         await _localDataSource.addPendingAction(PendingAction(
           type: ActionType.update,
           payload: {'id': id, 'completed': completed},
         ));
         
-        // Actualizar caché local
         final currentCache = await _localDataSource.getCachedTasks();
         final index = currentCache.indexWhere((t) => t.id == id);
         if (index != -1) {
@@ -182,7 +164,6 @@ class TaskRepository {
           payload: {'id': id},
         ));
         
-        // Actualizar caché
         final currentCache = await _localDataSource.getCachedTasks();
         currentCache.removeWhere((t) => t.id == id);
         await _localDataSource.cacheTasks(currentCache);
@@ -191,31 +172,64 @@ class TaskRepository {
       rethrow;
     }
   }
+
+  /// Sincroniza las acciones pendientes
+  Future<void> syncPendingActions() async {
+    final pendingActions = await _localDataSource.getPendingActions();
+    if (pendingActions.isEmpty) return;
+
+    print('🔄 [Repo] Intentando sincronizar ${pendingActions.length} acciones...');
+
+    for (var action in pendingActions) {
+      try {
+        switch (action.type) {
+          case ActionType.create:
+            await _apiService.createTask(CreateTaskDto(
+              title: action.payload['title'],
+              description: action.payload['description'],
+            ));
+            break;
+            
+          case ActionType.update:
+            // Combinar posible payload de completed y de title/desc
+            // Hive store: payload = { 'id': ..., 'completed': ... } OR { 'id': ..., 'title': ... }
+            await _apiService.updateTask(
+              action.payload['id'],
+              UpdateTaskDto(
+                completed: action.payload['completed'],
+                title: action.payload['title'],
+                description: action.payload['description'],
+              ),
+            );
+            break;
+
+          case ActionType.delete:
+            await _apiService.deleteTask(action.payload['id']);
+            break;
+        }
+        
+        if (action.key != null) {
+          await _localDataSource.removePendingAction(action.key!);
+        }
+      } catch (e) {
+        print('❌ Error sincronizando acción individual: $e');
+      }
+    }
+  }
   
   bool _isNetworkError(Object error) {
     if (error is DioException) {
-      // DEBUG: Print error details
-      print('🔍 Network Error Check: Type=${error.type}, Error=${error.error}, Msg=${error.message}');
-
-      // Check standard dio types
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.sendTimeout ||
           error.type == DioExceptionType.connectionError) {
         return true;
       }
-      
-      // On Web, CORS or Network errors often come as 'unknown' with null response
-      if (error.type == DioExceptionType.unknown) {
-         if (error.response == null) {
-           return true; 
-         }
+      if (error.type == DioExceptionType.unknown && error.response == null) {
+         return true; 
       }
-
-      // Fallback text checks
       final errorStr = error.error?.toString() ?? '';
       final messageStr = error.message ?? '';
-      
       return errorStr.contains('SocketException') || 
              errorStr.contains('XMLHttpRequest') ||
              messageStr.contains('XMLHttpRequest') ||

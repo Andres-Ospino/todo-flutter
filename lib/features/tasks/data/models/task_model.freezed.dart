@@ -467,6 +467,8 @@ UpdateTaskDto _$UpdateTaskDtoFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$UpdateTaskDto {
+  String? get title => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
   bool? get completed => throw _privateConstructorUsedError;
 
   /// Serializes this UpdateTaskDto to a JSON map.
@@ -486,7 +488,7 @@ abstract class $UpdateTaskDtoCopyWith<$Res> {
     $Res Function(UpdateTaskDto) then,
   ) = _$UpdateTaskDtoCopyWithImpl<$Res, UpdateTaskDto>;
   @useResult
-  $Res call({bool? completed});
+  $Res call({String? title, String? description, bool? completed});
 }
 
 /// @nodoc
@@ -503,9 +505,21 @@ class _$UpdateTaskDtoCopyWithImpl<$Res, $Val extends UpdateTaskDto>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? completed = freezed}) {
+  $Res call({
+    Object? title = freezed,
+    Object? description = freezed,
+    Object? completed = freezed,
+  }) {
     return _then(
       _value.copyWith(
+            title: freezed == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
             completed: freezed == completed
                 ? _value.completed
                 : completed // ignore: cast_nullable_to_non_nullable
@@ -525,7 +539,7 @@ abstract class _$$UpdateTaskDtoImplCopyWith<$Res>
   ) = __$$UpdateTaskDtoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({bool? completed});
+  $Res call({String? title, String? description, bool? completed});
 }
 
 /// @nodoc
@@ -541,9 +555,21 @@ class __$$UpdateTaskDtoImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? completed = freezed}) {
+  $Res call({
+    Object? title = freezed,
+    Object? description = freezed,
+    Object? completed = freezed,
+  }) {
     return _then(
       _$UpdateTaskDtoImpl(
+        title: freezed == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
         completed: freezed == completed
             ? _value.completed
             : completed // ignore: cast_nullable_to_non_nullable
@@ -556,17 +582,21 @@ class __$$UpdateTaskDtoImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$UpdateTaskDtoImpl implements _UpdateTaskDto {
-  const _$UpdateTaskDtoImpl({this.completed});
+  const _$UpdateTaskDtoImpl({this.title, this.description, this.completed});
 
   factory _$UpdateTaskDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$UpdateTaskDtoImplFromJson(json);
 
   @override
+  final String? title;
+  @override
+  final String? description;
+  @override
   final bool? completed;
 
   @override
   String toString() {
-    return 'UpdateTaskDto(completed: $completed)';
+    return 'UpdateTaskDto(title: $title, description: $description, completed: $completed)';
   }
 
   @override
@@ -574,13 +604,16 @@ class _$UpdateTaskDtoImpl implements _UpdateTaskDto {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$UpdateTaskDtoImpl &&
+            (identical(other.title, title) || other.title == title) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
             (identical(other.completed, completed) ||
                 other.completed == completed));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, completed);
+  int get hashCode => Object.hash(runtimeType, title, description, completed);
 
   /// Create a copy of UpdateTaskDto
   /// with the given fields replaced by the non-null parameter values.
@@ -597,11 +630,19 @@ class _$UpdateTaskDtoImpl implements _UpdateTaskDto {
 }
 
 abstract class _UpdateTaskDto implements UpdateTaskDto {
-  const factory _UpdateTaskDto({final bool? completed}) = _$UpdateTaskDtoImpl;
+  const factory _UpdateTaskDto({
+    final String? title,
+    final String? description,
+    final bool? completed,
+  }) = _$UpdateTaskDtoImpl;
 
   factory _UpdateTaskDto.fromJson(Map<String, dynamic> json) =
       _$UpdateTaskDtoImpl.fromJson;
 
+  @override
+  String? get title;
+  @override
+  String? get description;
   @override
   bool? get completed;
 

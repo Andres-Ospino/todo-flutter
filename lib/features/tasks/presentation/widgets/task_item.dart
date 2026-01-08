@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/task.dart';
 import '../providers/tasks_provider.dart';
+import 'task_dialog.dart';
 
-/// Widget para mostrar un item individual de tarea con mejor UI
+/// Widget para mostrar un item individual de tarea con mejor UI y animaciones
 class TaskItem extends ConsumerWidget {
   final Task task;
 
@@ -26,7 +28,7 @@ class TaskItem extends ConsumerWidget {
       key: Key(task.id),
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
-        await HapticFeedback.heavyImpact(); // Changed from warningImpact
+        await HapticFeedback.heavyImpact(); 
         if (context.mounted) {
            return await _showDeleteConfirmation(context);
         }
@@ -37,7 +39,6 @@ class TaskItem extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(AppConstants.taskDeletedSuccess),
-            duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
@@ -60,8 +61,13 @@ class TaskItem extends ConsumerWidget {
         ),
       ),
       child: Card(
-        margin: EdgeInsets.zero, // Manejado por el ListView
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        color: task.completed 
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.4) 
+            : colorScheme.surfaceContainer,
         child: InkWell(
+          borderRadius: BorderRadius.circular(16),
           onTap: () {
             HapticFeedback.lightImpact();
              ref.read(tasksNotifierProvider.notifier).toggleTaskCompletion(
@@ -70,78 +76,142 @@ class TaskItem extends ConsumerWidget {
                 );
           },
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 8, 16), // Adjusted padding for menu
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start, // Alineación superior para textos largos
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Custom Checkbox animado (usando M3 checkbox por ahora)
-                Transform.scale(
-                  scale: 1.1,
-                  child: Checkbox(
-                    value: task.completed,
-                    activeColor: colorScheme.primary,
-                    shape: const CircleBorder(),
-                    onChanged: (value) {
-                      HapticFeedback.lightImpact();
-                      ref.read(tasksNotifierProvider.notifier).toggleTaskCompletion(
-                            task.id,
-                            task.completed,
-                          );
-                    },
-                  ),
+                // Custom Checkbox
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Transform.scale(
+                    scale: 1.2,
+                    child: Checkbox(
+                      value: task.completed,
+                      activeColor: colorScheme.primary,
+                      shape: const CircleBorder(),
+                      side: BorderSide(color: colorScheme.outline, width: 2),
+                      onChanged: (value) {
+                        HapticFeedback.lightImpact();
+                        ref.read(tasksNotifierProvider.notifier).toggleTaskCompletion(
+                              task.id,
+                              task.completed,
+                            );
+                      },
+                    ),
+                  ).animate(target: task.completed ? 1 : 0)
+                   .scale(duration: 200.ms, curve: Curves.easeInOutBack, begin: const Offset(1,1), end: const Offset(1.1, 1.1))
+                   .then().scale(end: const Offset(1,1)),
                 ),
-                const SizedBox(width: 8),
+
+                const SizedBox(width: 12),
                 
                 // Task info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 8), // Alinear visualmente con checkbox
-                      Text(
-                        task.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          decoration: task.completed ? TextDecoration.lineThrough : null,
-                          color: task.completed 
-                              ? colorScheme.outline 
-                              : colorScheme.onSurface,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          task.title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                             decoration: task.completed ? TextDecoration.lineThrough : null,
+                            color: task.completed 
+                                ? colorScheme.outline 
+                                : colorScheme.onSurface,
+                          ),
                         ),
                       ),
                       if (task.description != null && task.description!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(
                           task.description!,
                           style: theme.textTheme.bodyMedium?.copyWith(
                              color: colorScheme.onSurfaceVariant,
+                             height: 1.3,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceVariant.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          dateFormat.format(task.createdAt),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.outline,
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, size: 14, color: colorScheme.secondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            dateFormat.format(task.createdAt),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.secondary,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
+                ),
+
+                // Actions Menu
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: colorScheme.outline),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      showDialog(
+                        context: context,
+                        builder: (context) => TaskDialog(task: task),
+                      );
+                    } else if (value == 'delete') {
+                      _confirmAndDelete(context, ref);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 20),
+                          SizedBox(width: 12),
+                          Text('Editar'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outlined, size: 20, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Eliminar', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0, curve: Curves.easeOutQuad);
+  }
+
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await _showDeleteConfirmation(context);
+    if (confirmed == true) {
+      ref.read(tasksNotifierProvider.notifier).deleteTask(task.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(AppConstants.taskDeletedSuccess),
+            behavior: SnackBarBehavior.floating,
+             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    }
   }
 
   Future<bool?> _showDeleteConfirmation(BuildContext context) {
@@ -150,7 +220,6 @@ class TaskItem extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('¿Eliminar tarea?', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text(AppConstants.confirmDeleteMessage),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
