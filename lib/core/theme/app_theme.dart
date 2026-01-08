@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class AppTheme {
   // Colores base
   static const Color _primaryColor = Color(0xFF6366F1); // Indigo
-  static const Color _secondaryColor = Color(0xFF8B5CF6); // Purple
   static const Color _errorColor = Color(0xFFEF4444); // Red
   static const Color _successColor = Color(0xFF10B981); // Green
   
@@ -28,7 +27,7 @@ class AppTheme {
       ),
       
       // Card
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -36,7 +35,7 @@ class AppTheme {
       ),
       
       // FloatingActionButton
-      floatingActionButtonTheme: const FloatingActionButtonTheme(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
         elevation: 4,
         shape: CircleBorder(),
       ),
@@ -108,8 +107,8 @@ class AppTheme {
         scrolledUnderElevation: 2,
       ),
       
-      // Card
-      cardTheme: CardTheme(
+      //  Card
+      cardTheme: CardThemeData(
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -117,7 +116,7 @@ class AppTheme {
       ),
       
       // FloatingActionButton
-      floatingActionButtonTheme: const FloatingActionButtonTheme(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
         elevation: 4,
         shape: CircleBorder(),
       ),
