@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Colores base
-  static const Color _primaryColor = Color(0xFF6366F1); // Indigo
-  static const Color _errorColor = Color(0xFFEF4444); // Red
-  static const Color _successColor = Color(0xFF10B981); // Green
+  // Colores base - Violeta y Teal para mayor viveza
+  static const Color _primaryColor = Color(0xFF6366F1); // Indigo 500
+  static const Color _secondaryColor = Color(0xFF14B8A6); // Teal 500
+  static const Color _errorColor = Color(0xFFEF4444); // Red 500
   
   // Light Theme
   static ThemeData get lightTheme {
@@ -16,73 +16,63 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: _primaryColor,
         brightness: Brightness.light,
+        primary: _primaryColor,
+        secondary: _secondaryColor,
         error: _errorColor,
       ),
+      
+      // Typography - Google Fonts se pueden añadir después si se desea
+      // Por ahora usamos la default mejorada de M3
       
       // AppBar
       appBarTheme: const AppBarTheme(
         centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        scrolledUnderElevation: 2,
+        scrolledUnderElevation: 0, // Flat always
       ),
       
       // Card
       cardTheme: CardThemeData(
-        elevation: 1,
+        elevation: 0, // Flat style modern
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.withOpacity(0.2)),
         ),
+        clipBehavior: Clip.antiAlias,
       ),
       
       // FloatingActionButton
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        elevation: 4,
-        shape: CircleBorder(),
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
       ),
       
       // Input Decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
+        fillColor: Colors.grey.shade50,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: _primaryColor,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: _errorColor,
-            width: 2,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _primaryColor, width: 2),
         ),
       ),
       
-      // Checkbox
-      checkboxTheme: CheckboxThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ),
-      
-      // Chip
+      // Chips (para filtros)
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
+        backgroundColor: Colors.grey.shade100,
+        selectedColor: _primaryColor.withOpacity(0.1),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -93,84 +83,58 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       
-      // Color Scheme
       colorScheme: ColorScheme.fromSeed(
         seedColor: _primaryColor,
         brightness: Brightness.dark,
+        primary: _primaryColor, // Maintain branding in dark
+        secondary: _secondaryColor,
         error: _errorColor,
+        surface: const Color(0xFF1F2937), // Cool gray 800
       ),
       
-      // AppBar
+      scaffoldBackgroundColor: const Color(0xFF111827), // Cool gray 900
+      
       appBarTheme: const AppBarTheme(
         centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        scrolledUnderElevation: 2,
+        scrolledUnderElevation: 0,
       ),
       
-      //  Card
       cardTheme: CardThemeData(
-        elevation: 1,
+        elevation: 0,
+        color: const Color(0xFF1F2937),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.white.withOpacity(0.05)),
         ),
       ),
       
-      // FloatingActionButton
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        elevation: 4,
-        shape: CircleBorder(),
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
       ),
-      
-      // Input Decoration
+       
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
+        fillColor: const Color(0xFF374151), // Cool gray 700
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: _primaryColor,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: _errorColor,
-            width: 2,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _primaryColor, width: 2),
         ),
       ),
       
-      // Checkbox
-      checkboxTheme: CheckboxThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ),
-      
-      // Chip
-      chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+       chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
+        backgroundColor: const Color(0xFF374151),
+        selectedColor: _primaryColor.withOpacity(0.2),
+         labelStyle: const TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }
-  
-  // Custom Colors (accessible from both themes)
-  static const Color successColor = _successColor;
-  static const Color errorColor = _errorColor;
-  static const Color warningColor = Color(0xFFF59E0B); // Amber
-  static const Color infoColor = Color(0xFF3B82F6); // Blue
 }
