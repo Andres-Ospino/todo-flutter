@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/task.dart';
 import '../providers/tasks_provider.dart';
 
@@ -42,6 +43,8 @@ class _TaskDialogState extends ConsumerState<TaskDialog> {
     }
 
     setState(() => _isLoading = true);
+    
+    final l10n = AppLocalizations.of(context)!;
 
     try {
       if (_isEditing) {
@@ -68,7 +71,7 @@ class _TaskDialogState extends ConsumerState<TaskDialog> {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEditing ? 'Tarea actualizada' : AppConstants.taskCreatedSuccess),
+            content: Text(_isEditing ? l10n.taskUpdated : l10n.taskCreated),
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
@@ -93,8 +96,9 @@ class _TaskDialogState extends ConsumerState<TaskDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(_isEditing ? 'Editar Tarea' : 'Nueva Tarea'),
+      title: Text(_isEditing ? l10n.editTask : l10n.addTask),
       content: Container(
         constraints: const BoxConstraints(maxWidth: 500),
         child: Form(
@@ -104,17 +108,17 @@ class _TaskDialogState extends ConsumerState<TaskDialog> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Título',
+                decoration: InputDecoration(
+                  labelText: l10n.taskTitle,
                   hintText: 'Ej: Comprar leche',
-                  prefixIcon: Icon(Icons.title),
+                  prefixIcon: const Icon(Icons.title),
                 ),
                 maxLength: AppConstants.maxTitleLength,
                 textCapitalization: TextCapitalization.sentences,
                 autofocus: true,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return AppConstants.titleRequired;
+                    return l10n.titleRequired;
                   }
                   if (value.length > AppConstants.maxTitleLength) {
                     return AppConstants.titleTooLong;
@@ -125,10 +129,10 @@ class _TaskDialogState extends ConsumerState<TaskDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Descripción (opcional)',
+                decoration: InputDecoration(
+                  labelText: l10n.taskDescription,
                   hintText: 'Detalles adicionales...',
-                  prefixIcon: Icon(Icons.description),
+                  prefixIcon: const Icon(Icons.description),
                 ),
                 maxLength: AppConstants.maxDescriptionLength,
                 maxLines: 3,
@@ -148,7 +152,7 @@ class _TaskDialogState extends ConsumerState<TaskDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _submit,
@@ -158,7 +162,7 @@ class _TaskDialogState extends ConsumerState<TaskDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(_isEditing ? 'Guardar' : 'Crear'),
+              : Text(_isEditing ? l10n.save : l10n.addTask),
         ),
       ],
     );

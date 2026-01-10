@@ -3,16 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/responsive/breakpoints.dart';
-import '../../../../core/theme/theme_provider.dart'; // Import theme provider
+import '../../../../core/theme/theme_provider.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_display.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/sync_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../providers/tasks_state.dart';
 import '../widgets/task_dialog.dart';
 import '../widgets/task_item.dart';
 import '../widgets/task_filter_bar.dart';
+import '../widgets/settings_widgets.dart';
 import 'dart:math';
 
 /// Pantalla principal de tareas con UI Premium y Responsiva
@@ -126,27 +128,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Resumen',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: theme.colorScheme.outline,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                           Row(
-                             children: [
-                               _SimpleCounter(
-                                 label: 'Total', 
-                                 count: tasksCount.total, 
-                                 color: theme.colorScheme.primary
-                               ),
-                               const SizedBox(width: 16),
-                               _SimpleCounter(
-                                 label: 'Pendiente', 
-                                 count: tasksCount.pending, 
-                                 color: theme.colorScheme.tertiary 
-                               ),
-                             ],
+                          _SummaryTitle(),
+                           _TaskCounters(
+                             total: tasksCount.total,
+                             pending: tasksCount.pending,
                            ),
                         ],
                       ),
@@ -160,8 +145,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               sliver: tasksState.when(
-                initial: () => const SliverFillRemaining(
-                  child: Center(child: Text('Iniciando...')),
+                initial: () => SliverFillRemaining(
+                  child: Center(child: _InitializingText()),
                 ),
                 loading: () => const SliverFillRemaining(
                   child: LoadingIndicator(message: ''),
@@ -175,9 +160,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       hasScrollBody: false,
                       child: FractionallySizedBox(
                         heightFactor: 0.6,
-                        child: EmptyState(
-                           message: 'No hay tareas encontradas',
-                        ),
+                        child: _EmptyTasksState(),
                       ),
                     );
                   }
@@ -234,11 +217,49 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateDialog,
-        icon: const Icon(Icons.add_task),
-        label: const Text('Nueva', style: TextStyle(fontWeight: FontWeight.bold)),
+      floatingActionButton: _AddTaskButton(onPressed: _showCreateDialog),
+    );
+  }
+}
+
+// Helper widgets with i18n
+class _SummaryTitle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      'Resumen', // TODO: Add to l10n if needed
+      style: theme.textTheme.titleSmall?.copyWith(
+        color: theme.colorScheme.outline,
+        fontWeight: FontWeight.bold,
       ),
+    );
+  }
+}
+
+class _TaskCounters extends StatelessWidget {
+  final int total;
+  final int pending;
+
+  const _TaskCounters({required this.total, required this.pending});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        _SimpleCounter(
+          label: 'Total',
+          count: total,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(width: 16),
+        _SimpleCounter(
+          label: 'Pendiente',
+          count: pending,
+          color: theme.colorScheme.tertiary,
+        ),
+      ],
     );
   }
 }
@@ -255,16 +276,47 @@ class _SimpleCounter extends StatelessWidget {
     return Row(
       children: [
         Text(
-          '$count', 
+          '$count',
           style: TextStyle(
-            fontWeight: FontWeight.bold, 
+            fontWeight: FontWeight.bold,
             fontSize: 16,
             color: color,
-          )
+          ),
         ),
         const SizedBox(width: 4),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
+    );
+  }
+}
+
+class _InitializingText extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Text('Iniciando...'); // Initializing state, rarely seen
+  }
+}
+
+class _EmptyTasksState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return EmptyState(message: l10n.noTasks);
+  }
+}
+
+class _AddTaskButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _AddTaskButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return FloatingActionButton.extended(
+      onPressed: onPressed,
+      icon: const Icon(Icons.add_task),
+      label: Text(l10n.addTask, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }
@@ -288,52 +340,21 @@ class SettingsSheet extends ConsumerWidget {
             children: [
               // No drag handle here as it is provided by showModalBottomSheet(showDragHandle: true)
               
-              Text('Configuración', style: Theme.of(context).textTheme.headlineSmall),
+              const SettingsTitle(),
               const SizedBox(height: 24),
               
-              const Text('Tema', style: TextStyle(fontWeight: FontWeight.bold)),
+              const ThemeLabel(),
               const SizedBox(height: 12),
-              SegmentedButton<ThemeMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: ThemeMode.system, 
-                    label: Text('Sistema'), 
-                    icon: Icon(Icons.brightness_auto)
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.light, 
-                    label: Text('Claro'), 
-                    icon: Icon(Icons.light_mode)
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.dark, 
-                    label: Text('Oscuro'), 
-                    icon: Icon(Icons.dark_mode)
-                  ),
-                ],
-                selected: {themeMode},
-                onSelectionChanged: (Set<ThemeMode> newSelection) {
-                  ref.read(themeProvider.notifier).setTheme(newSelection.first);
-                },
+              ThemeSelector(
+                themeMode: themeMode,
+                onChanged: (mode) => ref.read(themeProvider.notifier).setTheme(mode),
               ),
               
               const SizedBox(height: 24),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: const Text('Acerca de'),
-                subtitle: const Text('To-Do App v1.0.0'),
-                contentPadding: EdgeInsets.zero,
-                onTap: () {},
-              ),
+              const SettingsAboutTile(),
               const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.tonal(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cerrar'),
-                ),
-              ),
+              const SettingsCloseButton(),
             ],
           ),
         ),

@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
 
   # State Management
   flutter_riverpod: ^2.5.1
@@ -43,7 +46,7 @@ dependencies:
   json_annotation: ^4.9.0
 
   # Utilities
-  intl: ^0.19.0
+  intl: ^0.20.2
   flutter_dotenv: ^6.0.0
 
   # UI
@@ -74,6 +77,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -111,3 +115,14 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Internationalization configuration
+flutter_gen:
+  integrations:
+    flutter_localizations: true
+
+# Generate localization files
+l10n:
+  arb-dir: lib/l10n
+  template-arb-file: app_en.arb
+  output-localization-file: app_localizations.dart

@@ -1,0 +1,124 @@
+{
+  "@@locale": "en",
+  "appTitle": "To-Do App",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "tasksTitle": "Tasks",
+  "@tasksTitle": {
+    "description": "Title for tasks screen"
+  },
+  "addTask": "Add Task",
+  "@addTask": {
+    "description": "Button to add a new task"
+  },
+  "editTask": "Edit Task",
+  "@editTask": {
+    "description": "Button to edit a task"
+  },
+  "deleteTask": "Delete Task",
+  "@deleteTask": {
+    "description": "Button to delete a task"
+  },
+  "taskTitle": "Title",
+  "@taskTitle": {
+    "description": "Label for task title field"
+  },
+  "taskDescription": "Description",
+  "@taskDescription": {
+    "description": "Label for task description field"
+  },
+  "taskCompleted": "Completed",
+  "@taskCompleted": {
+    "description": "Label for completed status"
+  },
+  "taskPending": "Pending",
+  "@taskPending": {
+    "description": "Label for pending status"
+  },
+  "noTasks": "No tasks available",
+  "@noTasks": {
+    "description": "Message when there are no tasks"
+  },
+  "taskCount": "{count, plural, =0{No tasks} =1{1 task} other{{count} tasks}}",
+  "@taskCount": {
+    "description": "Number of tasks with pluralization",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskCreated": "Task created successfully",
+  "@taskCreated": {
+    "description": "Success message when task is created"
+  },
+  "taskUpdated": "Task updated successfully",
+  "@taskUpdated": {
+    "description": "Success message when task is updated"
+  },
+  "taskDeleted": "Task deleted successfully",
+  "@taskDeleted": {
+    "description": "Success message when task is deleted"
+  },
+  "errorLoadingTasks": "Error loading tasks",
+  "@errorLoadingTasks": {
+    "description": "Error message when tasks fail to load"
+  },
+  "errorCreatingTask": "Error creating task",
+  "@errorCreatingTask": {
+    "description": "Error message when task creation fails"
+  },
+  "errorUpdatingTask": "Error updating task",
+  "@errorUpdatingTask": {
+    "description": "Error message when task update fails"
+  },
+  "errorDeletingTask": "Error deleting task",
+  "@errorDeletingTask": {
+    "description": "Error message when task deletion fails"
+  },
+  "titleRequired": "Title is required",
+  "@titleRequired": {
+    "description": "Validation message for required title"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Save button text"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "Confirm button text"
+  },
+  "refresh": "Refresh",
+  "@refresh": {
+    "description": "Refresh button text"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language setting label"
+  },
+  "theme": "Theme",
+  "@theme": {
+    "description": "Theme setting label"
+  },
+  "lightMode": "Light Mode",
+  "@lightMode": {
+    "description": "Light theme option"
+  },
+  "darkMode": "Dark Mode",
+  "@darkMode": {
+    "description": "Dark theme option"
+  },
+  "systemMode": "System Default",
+  "@systemMode": {
+    "description": "System theme option"
+  }
+}

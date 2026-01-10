@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
-import 'core/theme/theme_provider.dart'; // Import theme provider
+import 'core/theme/theme_provider.dart';
 import 'features/tasks/data/datasources/task_local_datasource.dart';
 import 'features/tasks/presentation/screens/tasks_screen.dart';
+import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
   // Aseguramos que los bindings estén inicializados antes de cargar .env
@@ -45,7 +47,18 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode, // Use the dynamic theme mode
+      themeMode: themeMode,
+      // Internationalization configuration
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // English
+        Locale('es', ''), // Spanish
+      ],
       home: const TasksScreen(),
     );
   }
